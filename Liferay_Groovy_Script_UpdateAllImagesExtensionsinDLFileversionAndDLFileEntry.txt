@@ -1,0 +1,41 @@
+import com.liferay.portal.service.ResourcePermissionServiceUtil;
+ import com.liferay.portal.model.Role;
+ import com.liferay.portal.service.RoleLocalServiceUtil;
+import java.util.List;
+import com.liferay.portal.model.RoleConstants;
+ import com.liferay.portlet.documentlibrary.service.DLFileEntryLocalServiceUtil;
+ import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+ import com.liferay.portal.kernel.dao.orm.Criterion;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
+ import com.liferay.portlet.documentlibrary.model.DLFileEntry;
+ import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
+ import com.liferay.portal.kernel.dao.orm.DynamicQuery;
+ import  com.liferay.portal.kernel.util.StringPool;
+ import com.liferay.portlet.documentlibrary.model.DLFileVersion;
+ 
+ import com.liferay.portlet.documentlibrary.service.DLFileVersionLocalServiceUtil
+
+DynamicQuery fileEntryQuery= DynamicQueryFactoryUtil.forClass(DLFileEntry.class, PortalClassLoaderUtil.getClassLoader());
+Criterion criterion = null;
+String valueForLike=StringPool.PERCENT+"image"+StringPool.PERCENT;
+criterion=RestrictionsFactoryUtil.like("mimeType",valueForLike);
+criterion=RestrictionsFactoryUtil.and(criterion,RestrictionsFactoryUtil.eq("groupId",new Long(88684)));
+fileEntryQuery.add(criterion);
+List<DLFileEntry> fileEntriesList=DLFileEntryLocalServiceUtil.dynamicQuery(fileEntryQuery);
+DLFileVersion dlFileVersion=null;
+String extension=StringPool.BLANK;
+out.println("fileEntriesList"+fileEntriesList.size());
+for(DLFileEntry curFileEntry:fileEntriesList){
+	try{
+extension=curFileEntry.getMimeType().substring(curFileEntry.getMimeType().indexOf("/")+1);
+curFileEntry.setExtension(extension);	
+curFileEntry=DLFileEntryLocalServiceUtil.updateDLFileEntry(curFileEntry);
+dlFileVersion=curFileEntry.getFileVersion();
+dlFileVersion.setExtension(extension);
+DLFileVersionLocalServiceUtil.updateDLFileVersion(dlFileVersion);
+	}catch(Exception e){
+		out.println("dlFileVersion and dlfile entry extension not able set"+e.getLocalizedMessage());
+	}
+
+	out.println("dlFileVersion and dlfile entry extension  "+curFileEntry.getName());
+}

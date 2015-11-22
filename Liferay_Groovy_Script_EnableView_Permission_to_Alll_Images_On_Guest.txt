@@ -1,0 +1,45 @@
+import com.liferay.portal.service.ResourcePermissionServiceUtil;
+ import com.liferay.portal.model.Role;
+ import com.liferay.portal.service.RoleLocalServiceUtil;
+import java.util.List;
+import com.liferay.portal.model.RoleConstants;
+ import com.liferay.portlet.documentlibrary.service.DLFileEntryLocalServiceUtil;
+ import com.liferay.portal.kernel.dao.orm.RestrictionsFactoryUtil;
+ import com.liferay.portal.kernel.dao.orm.Criterion;
+import com.liferay.portal.kernel.util.PortalClassLoaderUtil;
+ import com.liferay.portlet.documentlibrary.model.DLFileEntry;
+ import com.liferay.portal.kernel.dao.orm.DynamicQueryFactoryUtil;
+ import com.liferay.portal.kernel.dao.orm.DynamicQuery;
+ import com.liferay.portlet.documentlibrary.model.DLFolder;
+
+DynamicQuery fileEntryQuery= DynamicQueryFactoryUtil.forClass(DLFileEntry.class, PortalClassLoaderUtil.getClassLoader());
+Criterion criterion = null;
+String[] mimeTypeExtensiona=["image/png","image/x-ms-bmp","image/jpeg"] as String[];
+
+criterion = RestrictionsFactoryUtil.in("mimeType",mimeTypeExtensiona);
+criterion=RestrictionsFactoryUtil.and(criterion,RestrictionsFactoryUtil.eq("groupId",new Long(126774)));
+fileEntryQuery.add(criterion);
+List<DLFileEntry> fileEntriesList=DLFileEntryLocalServiceUtil.dynamicQuery(fileEntryQuery);
+Role guestRole=RoleLocalServiceUtil.getRole(20155,RoleConstants.GUEST);
+String[] actionIds=["VIEW"] as String[];
+out.println("fileEntriesList"+fileEntriesList.size());
+long lastViewPermissionAssignedFolderId=0;
+long currentFolderId=0;
+for(DLFileEntry curFileEntry:fileEntriesList){
+	try{
+	currentFolderId=curFileEntry.getFolderId();
+	if(currentFolderId!=0&&lastViewPermissionAssignedFolderId!=currentFolderId){
+	ResourcePermissionServiceUtil.setIndividualResourcePermissions(curFileEntry.getGroupId(), curFileEntry.getCompanyId(),DLFolder.class.getName(),
+	String.valueOf(currentFolderId),guestRole.getRoleId(), actionIds);
+	lastViewPermissionAssignedFolderId=currentFolderId;
+	out.println("permission successfully setted to folder id"+currentFolderId);
+						}
+		ResourcePermissionServiceUtil.setIndividualResourcePermissions(
+				curFileEntry.getGroupId(), curFileEntry.getCompanyId(),
+				DLFileEntry.class.getName(),String.valueOf(curFileEntry.getFileEntryId()),guestRole.getRoleId(), actionIds);
+	}catch(Exception e){
+		out.println("permission not able stet"+e.getLocalizedMessage());
+	}
+
+	out.println("permission successfully setted to "+curFileEntry.getName());
+}
